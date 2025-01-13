@@ -23,6 +23,9 @@ def serve_ics():
     log("Serving calendar file...")
     return send_file(file_name, mimetype="text/calendar", as_attachment=True, download_name="calendar.ics")
 
+@app.route('/')
+def hello():
+    return 'Hello !'
 
 if __name__ == "__main__":
     # load .env file
