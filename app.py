@@ -36,4 +36,4 @@ if __name__ == "__main__":
     threading.Thread(target=update_ics_file, daemon=True).start()
     
     # Run the Flask server
-    app.run(debug=True, port=port)
+    app.run(debug=True, host='0.0.0.0', port=port)
