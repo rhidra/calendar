@@ -25,6 +25,7 @@ def serve_ics():
 
 @app.route('/')
 def hello():
+    log("Hello !")
     return 'Hello !'
 
 if __name__ == "__main__":
