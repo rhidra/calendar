@@ -28,6 +28,9 @@ def login(session):
     # Load username and password from .env file
     username = os.getenv("MY_USERNAME")
     password = os.getenv("MY_PASSWORD")
+
+    if username is None or password is None:
+        raise Exception("Username or password not found in environment variables")
     
     login_url = "https://crossfitwonderland.sites.zenplanner.com/login.cfm?VIEW=login&LOGOUT=false&message=multiProfile"
     payload = {
