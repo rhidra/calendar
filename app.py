@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 port = 5000
 file_name = "calendar.ics"
 
+app = Flask(__name__)
 
 def update_ics_file():
     while True:
@@ -24,8 +25,6 @@ def serve_ics():
 
 
 if __name__ == "__main__":
-    app = Flask(__name__)
-
     # load .env file
     load_dotenv()
 
