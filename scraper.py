@@ -61,16 +61,16 @@ def fetchCalendar(session):
         log(f"Failed with status code: {response.status_code}")
         raise Exception("Failed to fetch calendar")
 
-    #log(response.text)
+    print(response.text)
     soup = BeautifulSoup(response.text, "html.parser")
     divs = soup.find_all("div", class_="item clickable hover-opacity-8 calendar-custom-color-ff00e1")
-    appointmentIds = [div["id"] for div in divs if div.find("i", class_="icon-star")]
-    for id in appointmentIds:
+    appointmentData = [(div["id"], div.text.strip()) for div in divs if div.find("i", class_="icon-star")]
+    for id, _ in appointmentData:
         log(f"Found appointment with ID: {id}")
-    return appointmentIds
+    return appointmentData
 
 
-def extractAppointment(session, id):
+def extractAppointment(session, id, description):
     url = f'https://crossfitwonderland.sites.zenplanner.com/enrollment.cfm?appointmentId={id}'
     log(f"Fetching appointment {id}")
 
@@ -96,15 +96,15 @@ def extractAppointment(session, id):
 
     log(f"Appointment {id} is from {start_time} to {end_time}")
 
-    return (start_time, end_time)
+    return (start_time, end_time, description)
 
 
 # Returns a list of tuples, each containing the start and end time of a class
 def scrapeGymCalendar():
     session = requests.Session()
     login(session)
-    ids = fetchCalendar(session)
-    return [ extractAppointment(session, id) for id in ids ]
+    aptData = fetchCalendar(session)
+    return [ extractAppointment(session, id, description) for id, description in aptData ]
 
 
 if __name__ == "__main__":
