@@ -61,7 +61,7 @@ def fetchCalendar(session):
         log(f"Failed with status code: {response.status_code}")
         raise Exception("Failed to fetch calendar")
 
-    print(response.text)
+    #print(response.text)
     soup = BeautifulSoup(response.text, "html.parser")
     divs = soup.find_all("div", class_="item clickable hover-opacity-8 calendar-custom-color-ff00e1")
     appointmentData = [(div["id"], div.text.strip()) for div in divs if div.find("i", class_="icon-star")]
