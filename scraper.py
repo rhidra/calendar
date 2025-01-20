@@ -1,9 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 import http.cookiejar
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils import log
 import os
+from dotenv import load_dotenv
 
 
 def login(session):
@@ -50,23 +51,42 @@ def login(session):
 
 def fetchCalendar(session):
     url = "https://crossfitwonderland.sites.zenplanner.com/calendar.cfm?calendarType=PERSON:748B1290-6359-43ED-A907-D7A0475906ED"
-
     log(f"Fetching calendar from: {url}")
-
-    # Send an HTTP GET request
     response = session.get(url)
 
-    # Check the response status code
     if response.status_code != 200:
         log(f"Failed with status code: {response.status_code}")
         raise Exception("Failed to fetch calendar")
 
     #print(response.text)
     soup = BeautifulSoup(response.text, "html.parser")
-    divs = soup.find_all("div", class_="item clickable hover-opacity-8 calendar-custom-color-ff00e1")
+    divs = soup.select("div.item.clickable.hover-opacity-8.calendar-custom-color-ff00e1")
     appointmentData = [(div["id"], div.text.strip()) for div in divs if div.find("i", class_="icon-star")]
-    for id, _ in appointmentData:
-        log(f"Found appointment with ID: {id}")
+    for id, desc in appointmentData:
+        log(f"Found appointment: {id}, {desc}")
+    return appointmentData
+
+
+def fetchCalendarNextWeek(session):
+    today = datetime.today()
+    days_until_sunday = 7 - today.weekday() if today.weekday() != 6 else 7  # Always get the next Sunday
+    sunday = today + timedelta(days=days_until_sunday)
+    sunday = sunday.strftime("%Y-%m-%d")
+
+    url = f"https://crossfitwonderland.sites.zenplanner.com/calendar.cfm?calendarType=PERSON:748B1290-6359-43ED-A907-D7A0475906ED&DATE={sunday}"
+    log(f"Fetching calendar from: {url}")
+    response = session.get(url)
+
+    if response.status_code != 200:
+        log(f"Failed with status code: {response.status_code}")
+        raise Exception("Failed to fetch next week calendar")
+
+    #print(response.text)
+    soup = BeautifulSoup(response.text, "html.parser")
+    divs = soup.select("div.item.clickable.hover-opacity-8.calendar-custom-color-ff00e1")
+    appointmentData = [(div["id"], div.text.strip()) for div in divs if div.find("i", class_="icon-star")]
+    for id, desc in appointmentData:
+        log(f"Found appointment: {id}, {desc}")
     return appointmentData
 
 
@@ -85,10 +105,6 @@ def extractAppointment(session, id, description):
     date_str = soup.find("td", string="Date").find_next("td").get_text(strip=True)
     time_str = soup.find("td", string="Time").find_next("td").get_text(strip=True)
     
-    # Parse the date and time into datetime objects
-    # For the date, we'll use the format that matches 'Monday January 13, 2025'
-    date = datetime.strptime(date_str, "%A %B %d, %Y")
-
     # Parse the time range (assuming format '6:30 PM - 7:30 PM')
     time_parts = time_str.split(" - ")
     start_time = datetime.strptime(date_str + " " + time_parts[0], "%A %B %d, %Y %I:%M %p")
@@ -103,9 +119,11 @@ def extractAppointment(session, id, description):
 def scrapeGymCalendar():
     session = requests.Session()
     login(session)
-    aptData = fetchCalendar(session)
+    aptData = fetchCalendar(session) + fetchCalendarNextWeek(session)
+    aptData = list(dict(aptData).items())  # Remove duplicates
     return [ extractAppointment(session, id, description) for id, description in aptData ]
 
 
 if __name__ == "__main__":
+    load_dotenv()
     scrapeGymCalendar()
